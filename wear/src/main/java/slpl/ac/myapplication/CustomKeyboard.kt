@@ -15,12 +15,12 @@ class CustomKeyboard : InputMethodService() {
     private lateinit var mFullScreenExtractTextView: EditText
     private lateinit var mBaseFrameLayout: FrameLayout
 
-    // フルスクリーンモードで起動
+    // 1. フルスクリーンモードでIMEを起動
     override fun onEvaluateFullscreenMode(): Boolean {
         return true
     }
 
-    // レイアウトを操作するために，Extractに関するView参照を取得
+    // 2. レイアウトを操作するために，Extractに関するView参照を取得
     override fun onCreateExtractTextView(): View {
         mFullScreenExtractView = super.onCreateExtractTextView()
         mFullScreenExtractTextView = mFullScreenExtractView.findViewById(android.R.id.inputExtractEditText)
@@ -28,15 +28,15 @@ class CustomKeyboard : InputMethodService() {
         return mFullScreenExtractView
     }
 
-    // フルスクリーンモードのレイアウトを再構築する
+    // 3. フルスクリーンモードのレイアウトを再構築する
     override fun onCreateInputView(): View? {
         rebuildBaseView()
         initKeyViews()
-        return null // 通常はkeyboardViewを返すが存在しないので，nullを返す
+        return null // 通常はkeyboardViewを返すが存在しないのでnullを返す
     }
 
+    // 4. 標準搭載のレイアウトを削除してフラットな状態にし，新しくベースレイアウトに置き換える
     private fun rebuildBaseView(){
-        // 標準搭載のレイアウトを削除してフラットな状態にし，新しくベースレイアウトに置き換える
         val parent = mFullScreenExtractView.parent.parent.parent as ViewGroup
         val showView = parent.getChildAt(0)  // EditText + ActionButton
         val inputView = parent.getChildAt(1) // KeyboardView
@@ -47,7 +47,7 @@ class CustomKeyboard : InputMethodService() {
                 ViewGroup.LayoutParams.MATCH_PARENT)
         mBaseFrameLayout = FrameLayout(this)
         mBaseFrameLayout.layoutParams = params
-        mBaseFrameLayout.setBackgroundColor(Color.BLACK)
+        mBaseFrameLayout.setBackgroundColor(Color.DKGRAY)
         parent.addView(mBaseFrameLayout)
 
         // baseLayoutにKeyboardViewを追加
@@ -65,13 +65,13 @@ class CustomKeyboard : InputMethodService() {
         mBaseFrameLayout.addView(mFullScreenExtractTextView)
     }
 
+    // 5. キーボードになる独自xmlをベースレイアウトに追加
     private fun initKeyViews(){
-        // KeyとなるViewをベースレイアウトに追加
         val sampleLayout = layoutInflater.inflate(R.layout.custom_keys, null)
         mBaseFrameLayout.addView(sampleLayout)
         val button : Button = sampleLayout.findViewById(R.id.button)
         button.setOnClickListener {
-            hideWindow() // IMEを終了
+            hideWindow() // 6. IMEを終了
         }
     }
 }
