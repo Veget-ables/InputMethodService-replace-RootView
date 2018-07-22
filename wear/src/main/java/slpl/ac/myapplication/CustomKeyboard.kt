@@ -3,16 +3,17 @@ package slpl.ac.myapplication
 import android.graphics.Color
 import android.inputmethodservice.InputMethodService
 import android.text.InputType
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
-import android.view.Gravity
-import android.widget.Button
+
 
 class CustomKeyboard : InputMethodService() {
-    private lateinit var mFullScreenExtractView: View
-    private lateinit var mFullScreenExtractTextView: EditText
+    private lateinit var mExtractEditLayout: View
+    private lateinit var mExtractEditText: EditText
     private lateinit var mBaseFrameLayout: FrameLayout
 
     // 1. フルスクリーンモードでIMEを起動
@@ -20,58 +21,57 @@ class CustomKeyboard : InputMethodService() {
         return true
     }
 
-    // 2. レイアウトを操作するために，Extractに関するView参照を取得
+    // 2. レイアウト変更のために，ExtractAreaの参照を取得
     override fun onCreateExtractTextView(): View {
-        mFullScreenExtractView = super.onCreateExtractTextView()
-        mFullScreenExtractTextView = mFullScreenExtractView.findViewById(android.R.id.inputExtractEditText)
-        mFullScreenExtractTextView.setBackgroundColor(Color.RED)
-        return mFullScreenExtractView
+        mExtractEditLayout = super.onCreateExtractTextView()
+        mExtractEditText = mExtractEditLayout.findViewById(android.R.id.inputExtractEditText)
+        mExtractEditText.setBackgroundColor(Color.RED)
+        return mExtractEditLayout
     }
 
-    // 3. フルスクリーンモードのレイアウトを再構築する
+    // 3. レイアウトを再構築する
     override fun onCreateInputView(): View? {
-        rebuildBaseView()
+        rebuildFullScreenView()
         initKeyViews()
-        return null // 通常はkeyboardViewを返すが存在しないのでnullを返す
+        return null // 通常はKeyboardViewを返すが存在しないのでnullを返す
     }
 
-    // 4. 標準搭載のレイアウトを削除してフラットな状態にし，新しくベースレイアウトに置き換える
-    private fun rebuildBaseView(){
-        val parent = mFullScreenExtractView.parent.parent.parent as ViewGroup
-        val showView = parent.getChildAt(0)  // EditText + ActionButton
-        val inputView = parent.getChildAt(1) // KeyboardView
-        parent.removeView(showView)
-        parent.removeView(inputView)
+    private fun rebuildFullScreenView() {
+        // 4. デフォルトのレイアウトを変更してparentPanelをフラットな状態にする
+        val parentPanel = mExtractEditLayout.parent.parent.parent as ViewGroup
+        val fullScreenArea = parentPanel.getChildAt(0) as ViewGroup  // ExtractArea + CandidateArea
+        fullScreenArea.removeAllViews()
+        // parentPanelの子ViewにはinputAreaがいる
+        // val inputArea = parentPanel.getChildAt(1)
+
+        // 5. parentPanelの上にベースとなるFrameLayoutを置く
         val params = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT)
         mBaseFrameLayout = FrameLayout(this)
         mBaseFrameLayout.layoutParams = params
         mBaseFrameLayout.setBackgroundColor(Color.DKGRAY)
-        parent.addView(mBaseFrameLayout)
+        parentPanel.addView(mBaseFrameLayout)
 
-        // baseLayoutにKeyboardViewを追加
-        mBaseFrameLayout.addView(inputView, params)
-
-        // baseLayoutにEditTextを追加
-        (mFullScreenExtractView as ViewGroup).removeView(mFullScreenExtractTextView)
-        mFullScreenExtractTextView.apply {
+        // 6. FrameLayoutにExtractEditTextを追加
+        (mExtractEditLayout as ViewGroup).removeView(mExtractEditText)
+        mExtractEditText.apply {
             inputType = InputType.TYPE_TEXT_FLAG_AUTO_CORRECT
             gravity = Gravity.TOP
             val fp = FrameLayout.LayoutParams(100, 100)
             fp.gravity = Gravity.CENTER
             layoutParams = fp
         }
-        mBaseFrameLayout.addView(mFullScreenExtractTextView)
+        mBaseFrameLayout.addView(mExtractEditText)
     }
 
-    // 5. キーボードになる独自xmlをベースレイアウトに追加
-    private fun initKeyViews(){
+    // 7. 文字入力機能を担う独自xmlをFrameLayoutに追加
+    private fun initKeyViews() {
         val sampleLayout = layoutInflater.inflate(R.layout.custom_keys, null)
         mBaseFrameLayout.addView(sampleLayout)
-        val button : Button = sampleLayout.findViewById(R.id.button)
+        val button: Button = sampleLayout.findViewById(R.id.button)
         button.setOnClickListener {
-            hideWindow() // 6. IMEを終了
+            hideWindow() // 8. ウィンドウを閉じる
         }
     }
 }
